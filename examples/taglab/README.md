@@ -20,7 +20,9 @@ Actual GitHub fork and local checkout: complete. Extension uses the real SDK fro
 
 On 2026-11-08 the localhost server was deployed with Docker Desktop's WSL 2 engine using the official v2.8.0 image. All five Compose services started, the web login was checked, and 18 previously unannotated pilot records were uploaded without model suggestions or reference labels. The existing five local references were preserved. No custom server build is claimed.
 
-An opt-in live check exercised four synthetic records in a separate QA workspace: one valid submitted answer was returned, one draft was ignored, and an invalid quotation and a changed source input were rejected. Staging and adjudication were checked against an isolated fixture database. These automated fixture responses are not human reference labels or model-quality measurements. A real human browser submission and its subsequent local adjudication remain the next acceptance step.
+An opt-in live check exercised four synthetic records in a separate QA workspace: one valid submitted answer was returned, one draft was ignored, and an invalid quotation and a changed source input were rejected. Staging and adjudication were checked against an isolated fixture database. These automated fixture responses are not human reference labels or model-quality measurements.
+
+Two real user blind annotations have since been submitted through the browser, pulled, validated, staged and explicitly accepted after assisted evidence review. The existing five references remained unchanged, bringing the local total to seven. This is one person's labelling followed by assistant review, not an independent dual-human agreement study. A new offline rule run used four pilot references across 20 inputs while preserving all six earlier experiment snapshots; no model requests were made in that check. The extension/workbench suite now has 32 passing tests.
 
 ## Run the extension tests
 
@@ -67,7 +69,7 @@ python taglab_argilla.py push path/to/bundle.json --confirm-upload
 python taglab_argilla.py pull path/to/bundle.json --output private/proposals.json
 ```
 
-`push` creates a dataset and logs records through the SDK. `pull` reads submitted responses and produces validated proposals. It never changes TagLab reference labels. Server creation, upload and the initial pull were verified locally; the real pilot task has no new human submissions yet.
+`push` creates a dataset and logs records through the SDK. `pull` reads submitted responses and produces validated proposals. It never changes TagLab reference labels. The companion bridge stages those proposals before a separate explicit adjudication. Replaying a previously accepted, identical proposal is a no-op, allowing later answers from the same immutable export to sync. Batch provenance and stale unaccepted revisions are still checked, and a changed answer is a distinct proposal that requires review.
 
 ## Opt-in live integration check
 

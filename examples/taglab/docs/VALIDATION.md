@@ -28,9 +28,17 @@ The initial Elasticsearch start failed because an ARM-specific `-XX:UseSVE=0` op
 
 The fork SDK reports `2.8.0.dev0`; these dataset upload and synthetic submitted-response round trips passed against the official `v2.8.0` server image. This verifies the exercised paths, not all SDK/server combinations. Dependency deprecation warnings from upstream Pydantic configuration remain visible.
 
+## Real human round trip
+
+Two user-submitted blind responses were pulled from the real annotation page: both passed integrity, status, version and quotation checks. Their technology/business topics and interview format were reviewed against the supplied text, then explicitly accepted with original author and assisted-adjudication reasons retained. No prior reference was replaced. The local reference total increased from five to seven; this is not independent dual-human agreement and does not establish the truth of the source descriptions.
+
+A new offline rule run included four eligible pilot references across 20 pilot records. All six earlier experiment bodies remained unchanged. This checks reference ingestion and immutable experiment history, not an improvement in model quality. Model credentials were absent, so this step made no model requests.
+
+Repeated synchronization initially exposed a revision conflict after a proposal was accepted. Exact accepted replays are now counted as no-ops before checking the changed local revision; later answers from the same bundle remain importable. Bundle provenance and stale unaccepted proposals are still checked. Three regression cases cover accepted replay, mixed old/new answers and cross-bundle replay; the existing stale-reference test also covers already staged proposals. The full suite has 32 passing tests.
+
 ## What remains unverified
 
-A new, independent human response submitted through the real browser UI, pulled into the local proposal queue and explicitly adjudicated. The browser task is ready, but that human step has not yet occurred. Broad multi-user operations, production deployment and larger model-quality evaluation are also outside this acceptance run.
+Broad multi-user operations, independent annotator agreement, production deployment and larger model-quality evaluation are outside this acceptance run. More diverse references are needed before comparing model strategies reliably.
 
 ## Reproduction
 

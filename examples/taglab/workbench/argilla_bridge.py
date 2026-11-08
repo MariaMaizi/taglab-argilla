@@ -33,24 +33,38 @@ def stage(result,bundle):
  bridge.validate_bundle(bundle)
  if result['bundle_fingerprint']!=bundle['fingerprint']:raise ValueError('Mismatched export and proposal bundle')
  known={r['record_id']:r for r in bundle['records']}
+ counts={'staged':0,'already_staged':0,'already_accepted':0,'gold_updated':False}
  with core.db() as c:
   c.execute('CREATE TABLE IF NOT EXISTS argilla_proposals(id TEXT PRIMARY KEY,body TEXT NOT NULL,status TEXT NOT NULL,at TEXT NOT NULL)')
+  c.execute('BEGIN IMMEDIATE')
   for p in result['proposals']:
    body={k:v for k,v in p.items() if k not in ('proposal_id','status')}
    if bridge.fingerprint(body)[:24]!=p['proposal_id']:raise ValueError('Proposal integrity check failed')
+   if p['mode']!=bundle['mode'] or p['bundle_fingerprint']!=bundle['fingerprint'] or p['record_id'] not in known:raise ValueError('Proposal provenance mismatch')
+   existing=c.execute('select body,status from argilla_proposals where id=?',(p['proposal_id'],)).fetchone()
+   if existing and json.loads(existing['body'])!=p:raise ValueError('Stored proposal differs from replay')
+   # Accepted proposals legitimately changed the local revision. An exact replay
+   # is a no-op, so later answers from the same immutable export can still sync.
+   if existing and existing['status']=='accepted':
+    counts['already_accepted']+=1
+    continue
+   if existing and existing['status']!='staged':raise ValueError('Unknown proposal state')
    r=core.record(p['record_id']);exported=known[p['record_id']]
    if r['split']=='test':raise ValueError('Holdout cannot enter development adjudication')
    if p['input_hash']!=core.digest({'title':r['episode_title'],'text':core.input_text(r)}):raise ValueError('Local input changed')
    if p['annotation_revision']!=r['revision']:raise ValueError('Reference revision changed; re-export')
    if p['taxonomy_hash']!=core.digest(core.TAX):raise ValueError('Taxonomy changed')
    label=p['label'];core.validate_labels(label,r['episode_title']+'\n'+core.input_text(r),True)
-   if p['mode']!=bundle['mode'] or p['bundle_fingerprint']!=bundle['fingerprint']:raise ValueError('Proposal provenance mismatch')
    # Revalidate full answer; never trust a file just because its hash is correct.
    values={'topics':label['topics'],'format':label['format'],'review_state':'needs_review' if label['needs_review'] else 'confirmed',
     'notes':label['note'],'semantic_support':label.get('semantic_support'),**{'evidence_'+k:v for k,v in label['evidence'].items()}}
    bridge.validate_answer(bundle,exported,values)
-   c.execute('INSERT OR IGNORE INTO argilla_proposals VALUES(?,?,?,?)',(p['proposal_id'],json.dumps(p,ensure_ascii=False),'staged',core.now()))
- return {'staged':len(result['proposals']),'gold_updated':False}
+   if existing:
+    counts['already_staged']+=1
+   else:
+    c.execute('INSERT INTO argilla_proposals VALUES(?,?,?,?)',(p['proposal_id'],json.dumps(p,ensure_ascii=False),'staged',core.now()))
+    counts['staged']+=1
+ return counts
 
 def adjudicate(proposal_id, reviewer, reason):
  if not reason.strip():raise ValueError('Adjudication requires a reason')
