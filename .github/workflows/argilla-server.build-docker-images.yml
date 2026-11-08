@@ -15,6 +15,7 @@ on:
 
 jobs:
   build:
+    if: ${{ github.repository == 'argilla-io/argilla' }}
     name: Build Argilla server docker images
     runs-on: ubuntu-latest
 

@@ -36,3 +36,9 @@ python taglab_argilla.py validate path/to/local/bundle.json
 For the companion UI, run `python workbench/app.py`. A new checkout has no corpus: collect permitted public RSS metadata with `python workbench/scripts/collect_podcasts.py`, then start the app. No model call occurs during import or offline validation. A model API key must be entered in the local UI to run model experiments.
 
 A user response is a claimed human submission, not proof of truth or independence. A bundle hash is an integrity/version check, not a cryptographic signature. Semantic support still requires review.
+
+## Fork workflow notification fix
+
+The inherited SDK build matrix failed on Python 3.13 while installing pyzmq 26.2.0 (`Use build.targets instead of cmake.targets for scikit-build-core >= 0.10`). It did not reach application tests. The separately maintained TagLab extension workflow passed in GitHub Actions.
+
+Upstream release, documentation, cloud and legacy workflows now have job-level `github.repository == 'argilla-io/argilla'` guards. The TagLab workflow remains active, and a policy test checks those guards. This does not erase old failures or suppress all GitHub notifications; it prevents this fork from running upstream-only infrastructure jobs. The project does not claim full Python 3.13 compatibility.

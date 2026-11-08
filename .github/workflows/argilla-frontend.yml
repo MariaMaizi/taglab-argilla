@@ -18,6 +18,7 @@ permissions:
 
 jobs:
   build:
+    if: ${{ github.repository == 'argilla-io/argilla' }}
     name: Build argilla-frontend
     runs-on: ubuntu-latest
     defaults:
@@ -63,9 +64,7 @@ jobs:
     name: Build development argilla-fronted docker image
     needs: build
     uses: ./.github/workflows/argilla-frontend.build-push-dev-frontend-docker.yml
-    if: |
-      !cancelled() &&
-      github.event_name == 'pull_request' && github.event.pull_request.draft == false
+    if: ${{ github.repository == 'argilla-io/argilla' && (!cancelled() && github.event_name == 'pull_request' && github.event.pull_request.draft == false) }}
     with:
       image-name: argilla/argilla-frontend-for-dev
       dockerfile: argilla-frontend/dev.frontend.Dockerfile
@@ -76,10 +75,7 @@ jobs:
     name: Deploy pr environment
     uses: ./.github/workflows/argilla-frontend.deploy-environment.yml
     needs: build_dev_docker_image
-    if: |
-      !cancelled() &&
-      needs.build_dev_docker_image.result == 'success' &&
-      github.event_name == 'pull_request' && github.event.pull_request.draft == false
+    if: ${{ github.repository == 'argilla-io/argilla' && (!cancelled() && needs.build_dev_docker_image.result == 'success' && github.event_name == 'pull_request' && github.event.pull_request.draft == false) }}
     with:
       image-name: argilla/argilla-frontend-for-dev
       image-version: ${{ needs.build_dev_docker_image.outputs.version }}

@@ -2,7 +2,7 @@ name: TagLab extension tests
 on:
   push:
     branches: ["taglab/podcast-review", "develop"]
-    paths: ["examples/taglab/**", "argilla/**", ".github/workflows/taglab-tests.yml"]
+    paths: ["examples/taglab/**", "argilla/**", ".github/workflows/**"]
   workflow_dispatch:
 permissions:
   contents: read

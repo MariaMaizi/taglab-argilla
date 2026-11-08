@@ -8,8 +8,7 @@ jobs:
   teardown_pr_environment:
     name: Teardown Cloud Run PR environment
     runs-on: ubuntu-latest
-    if: github.event.pull_request.head.repo.full_name == github.repository
-
+    if: ${{ github.repository == 'argilla-io/argilla' && (github.event.pull_request.head.repo.full_name == github.repository) }}
     # Grant permissions to `GITHUB_TOKEN` for Google Cloud Workload Identity Provider
     permissions:
       contents: read

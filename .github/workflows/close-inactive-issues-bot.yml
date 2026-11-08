@@ -9,6 +9,7 @@ permissions:
 
 jobs:
   close-issues:
+    if: ${{ github.repository == 'argilla-io/argilla' }}
     runs-on: ubuntu-latest
     permissions:
       issues: write

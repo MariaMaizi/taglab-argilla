@@ -6,6 +6,7 @@ on:
 
 jobs:
   teardown_pr_environments:
+    if: ${{ github.repository == 'argilla-io/argilla' }}
     name: Teardown Cloud Run PR environments
     runs-on: ubuntu-latest
 

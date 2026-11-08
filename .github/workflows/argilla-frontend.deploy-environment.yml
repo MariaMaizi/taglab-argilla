@@ -22,6 +22,7 @@ on:
 
 jobs:
   deploy:
+    if: ${{ github.repository == 'argilla-io/argilla' }}
     name: Deploy Argilla to Cloud Run
     runs-on: ubuntu-latest
 

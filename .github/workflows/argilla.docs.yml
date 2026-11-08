@@ -25,6 +25,7 @@ permissions:
 
 jobs:
   publish:
+    if: ${{ github.repository == 'argilla-io/argilla' }}
     runs-on: ubuntu-latest
 
     env:
