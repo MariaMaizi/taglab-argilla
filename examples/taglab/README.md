@@ -6,7 +6,8 @@ TagLab 用于公开文字的标注、模型对比和错误复核。目前以播�
 
 ## 从哪里开始
 
-- 先看 [约 3 分钟的 Demo 步骤](docs/DEMO.md)，了解完整流程。
+- 先了解 [产品设计与策略验证](docs/PRODUCT.md)：问题定义、规则取舍和如何用错误案例检查策略。
+- 配合 [约 3 分钟的 Demo 步骤](docs/DEMO.md)，查看完整流程。
 - 了解判断与版本设计，读 [原理与实现](docs/原理与实现.md) 和 [系统架构](docs/ARCHITECTURE.md)。
 - 查看做过什么验证、还缺什么，读 [验证记录](docs/VALIDATION.md) 与 [实验记录](docs/PILOT-20261108.md)。
 

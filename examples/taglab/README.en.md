@@ -6,6 +6,7 @@ TagLab supports public-text annotation, paired model experiments and error revie
 
 ## Start here
 
+- Read [product design and strategy validation](docs/PRODUCT.en.md) for the problem, rule decisions and failure-driven strategy checks.
 - Follow the [three-minute demo](docs/DEMO.en.md) for the workflow.
 - Read [principles](docs/PRINCIPLES.en.md) and [architecture](docs/ARCHITECTURE.en.md) for decision and version design.
 - See [validation](docs/VALIDATION.en.md) and [pilot notes](docs/PILOT-20261108.en.md) for exercised paths and remaining limits.

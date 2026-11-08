@@ -16,6 +16,19 @@ The first use case is classifying podcast titles and descriptions by topic and p
 
 Workflow: **public material → cleaning and versions → blind annotation / model experiments → evidence checks → disagreement review → explicit adjudication → evaluation and archive**.
 
+## Product design in practice
+
+The project connects two kinds of work: preparing content data and evaluating model outputs, and turning ambiguous judgments into explicit rules that can be examined through failure cases and controlled prompt comparisons.
+
+| Area | Practice in the project |
+| --- | --- |
+| Content understanding and taxonomy | Separate topic from programme format; define label boundaries, examples, counterexamples and an unknown option. |
+| Evaluation and data quality | Keep cleaning changes, machine suggestions, human responses and scoring references distinct; compare prompts on shared inputs. |
+| Rules and strategy design | Translate “do not guess” into output constraints, evidence requirements and adjudication conditions beyond prompt wording. |
+| Error analysis and strategy validation | Separate structural failures, invalid quotations, unsupported interpretations and reference disputes; retain experiment conditions and revisions. |
+
+See [product design and strategy validation](examples/taglab/docs/PRODUCT.en.md) for the task definition, decisions, failure cases and metrics. The current task uses podcast titles and descriptions; it does not evaluate audio understanding or run a live user-traffic experiment.
+
 ## Verified scope
 
 As of 2026-11-08, the local Docker deployment, web annotation and return path, repeated synchronization and separate model-review tasks have been exercised. The application suite has **40 passing tests**.
@@ -28,6 +41,7 @@ The development machine has seven references and eight run records. The small co
 
 | Topic | English | 中文 |
 | --- | --- | --- |
+| Product problem, rules and strategy validation | [Product design](examples/taglab/docs/PRODUCT.en.md) | [产品设计](examples/taglab/docs/PRODUCT.md) |
 | Installation and tests | [Guide](examples/taglab/README.en.md) | [使用说明](examples/taglab/README.md) |
 | Three-minute walkthrough | [Demo](examples/taglab/docs/DEMO.en.md) | [演示步骤](examples/taglab/docs/DEMO.md) |
 | Principles and examples | [Principles](examples/taglab/docs/PRINCIPLES.en.md) | [原理与实现](examples/taglab/docs/原理与实现.md) |
