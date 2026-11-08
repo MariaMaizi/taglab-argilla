@@ -55,6 +55,26 @@ def test_reject_paraphrased_evidence(bundle):
  data=exported(bundle);data['responses']['evidence_business'][0]['value']='企业...竞争'
  assert not t.proposals(bundle,[data])['proposals']
 
+def test_pasted_boundary_whitespace_is_removed_with_audit(bundle):
+ data=exported(bundle);original=' \n企业经营与竞争\n \n'
+ data['responses']['evidence_business'][0]['value']=original
+ result=t.proposals(bundle,[data]);assert not result['rejected']
+ proposal=result['proposals'][0]
+ assert proposal['label']['evidence']['business']=='企业经营与竞争'
+ assert proposal['normalizations']==[{'question':'evidence_business','action':'strip_boundary_whitespace',
+  'original_value':original,'normalized_value':'企业经营与竞争'}]
+ assert data['responses']['evidence_business'][0]['value']==original
+
+def test_boundary_normalization_does_not_repair_internal_changes(bundle):
+ data=exported(bundle);data['responses']['evidence_business'][0]['value']=' \n企业经营...竞争\n '
+ result=t.proposals(bundle,[data]);assert not result['proposals']
+ assert 'Quote' in result['rejected'][0]['error']
+
+def test_verbatim_quotes_do_not_change_proposal_schema(bundle):
+ result=t.proposals(bundle,[exported(bundle)])
+ assert len(result['proposals'])==1
+ assert 'normalizations' not in result['proposals'][0]
+
 def test_draft_not_imported(bundle):
  data=exported(bundle)
  for answers in data['responses'].values():

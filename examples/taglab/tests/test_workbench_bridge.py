@@ -73,3 +73,20 @@ def test_bad_proposal_rolls_back_entire_stage(local):
  bad=copy.deepcopy(res['proposals'][0]);bad['proposal_id']='tampered';res['proposals'].append(bad)
  with pytest.raises(ValueError):b.stage(res,bundle)
  with core.db() as c:assert c.execute('select count(*) from argilla_proposals').fetchone()[0]==0
+
+def test_model_visible_feedback_cannot_become_independent_reference(local):
+ bundle=b.build_bundle('pilot');bundle['mode']='review';bundle['experiment_id']='synthetic-run';bundle['strategy']='B'
+ bundle=b.bridge.seal(bundle)
+ b.bridge.offline_client()
+ r=b.bridge.records(bundle)[0]
+ import argilla as rg
+ uid=uuid4()
+ values={'topics':['business'],'format':'unknown','review_state':'needs_review',
+  'evidence_business':'企业经营与市场竞争','notes':'synthetic disputed feedback','semantic_support':'uncertain'}
+ responses=[rg.Response(question_name=k,value=v,user_id=uid,status='submitted') for k,v in values.items()]
+ record=rg.Record(id=r.id,fields=r.fields.to_dict(),responses=responses)
+ result=b.bridge.proposals(bundle,[b.bridge.export_record(record)])
+ b.stage(result,bundle)
+ with pytest.raises(ValueError,match='Model-visible'):
+  b.adjudicate(result['proposals'][0]['proposal_id'],'fixture','must remain feedback')
+ assert core.stats()['reviewed']==0

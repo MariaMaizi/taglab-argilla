@@ -26,6 +26,8 @@ Two real user blind annotations have since been submitted through the browser, p
 
 A subsequent ten-record paired model run made 20 real requests; 18 outputs passed structural/quotation checks. Two mechanically valid but semantically questionable candidates were sent to a separate live review dataset as Suggestions, with no human Responses. One existing reference-evidence question is pending, so the small run is not used to choose a winning strategy. See [the run notes and limitations](docs/PILOT-20261108.md).
 
+The user later retained two format interpretations as disputed review feedback and explicitly removed one reference label. The feedback remains outside independent references. A separate reference audit reused the saved outputs with zero model calls; it preserved original scores and shows how a reference revision changes the result. Forty tests cover the extension, workbench, boundary-whitespace handling and reference audits. See the [local demonstration guide](docs/DEMO.md).
+
 ## Run the extension tests
 
 From this directory (`examples/taglab`), with Python 3.11:
@@ -76,6 +78,12 @@ python taglab_argilla.py pull path/to/bundle.json --output private/proposals.jso
 ## Opt-in live integration check
 
 After starting the server, run `python live_smoke.py --confirm-local-qa`. It reads local credentials, creates clearly named synthetic QA records and an automated fixture author in the separate `taglab-qa` workspace, and saves a private report. It creates no real references and makes no model calls. QA fixtures are retained for inspection. This is an SDK/API integration check; it does not submit an answer through the browser UI.
+
+## Audit a reference revision without another model request
+
+In a populated companion workbench, run `python reference_audit.py EXPERIMENT_ID`. It creates a separate local analysis, preserving the source experiment. Inputs and taxonomy must match; disputed references are excluded from the new score. The report labels post-output reference changes as sensitivity analysis, not improved model performance or a new independent evaluation.
+
+Human quote imports may remove boundary whitespace introduced by copying only if the result is an exact input substring; the original and normalized values are retained. Internal edits, punctuation differences and ellipsis-joined fragments remain invalid. This preprocessing does not change model-output validation.
 
 ## How the companion workbench connects
 

@@ -137,6 +137,27 @@ def validate_answer(bundle, row, values):
     return {'topics': topics, 'format': fmt, 'evidence': evidence,
             'needs_review': state == 'needs_review', 'note': note, 'semantic_support': semantic}
 
+def normalize_answer_quotes(bundle, row, values):
+    """Trim paste-only edge whitespace only when the result is verbatim input.
+
+    Preserve both values in the proposal audit. No punctuation, internal
+    whitespace, ellipses or wording is repaired; model validation is unchanged.
+    """
+    normalized, changes = dict(values), []
+    text = row['title'] + '\n' + row['text']
+    questions = ['evidence_' + x['id'] for x in bundle['taxonomy']['topics']] + ['evidence_format']
+    for question in questions:
+        original = values.get(question)
+        if not isinstance(original, str) or original in text:
+            continue
+        trimmed = original.strip()
+        if trimmed != original and 2 <= len(trimmed) <= 500 and trimmed in text:
+            normalized[question] = trimmed
+            changes.append({'question': question, 'action': 'strip_boundary_whitespace',
+                            'original_value': original, 'normalized_value': trimmed})
+    return normalized, changes
+
+
 def export_record(record):
     """Preserve submission status, which upstream Record.to_dict omits."""
     data = record.to_dict()
@@ -175,11 +196,14 @@ def proposals(bundle, exported_records):
                     by_user[uid][question] = response.get('value')
             for uid, values in by_user.items():
                 try:
+                    values, normalizations = normalize_answer_quotes(bundle, source, values)
                     label = validate_answer(bundle, source, values)
                     body = {'bundle_fingerprint': bundle['fingerprint'], 'mode': bundle['mode'],
                             'record_id': source['record_id'], 'input_hash': source['input_hash'],
                             'annotation_revision': source['annotation_revision'], 'reviewer': 'argilla:' + uid,
                             'label': label, 'taxonomy_hash': fingerprint(bundle['taxonomy'])}
+                    if normalizations:
+                        body['normalizations'] = normalizations
                     accepted.append({**body, 'proposal_id': fingerprint(body)[:24], 'status': 'staged'})
                 except ValueError as exc:
                     rejected.append({'record_id': source['record_id'], 'user_id': uid, 'error': str(exc)})
