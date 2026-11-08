@@ -76,6 +76,3 @@ def test_url_guard():
  assert t.safe_url('http://127.0.0.1:6900')
  assert not t.safe_url('http://remote.example')
  assert not t.safe_url('https://user:key@example.org')
-
-
-

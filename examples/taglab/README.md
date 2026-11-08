@@ -4,6 +4,8 @@ This fork adds a small, inspectable integration to Argilla. The first use case i
 
 The upstream Apache-2.0 license and attribution are retained. Application changes live in `examples/taglab/`. Two small SDK fixes declare its requests dependency and allow explicit HTTP transport injection for offline tests; the annotation server and frontend remain unchanged.
 
+中文原理与实际案例见 [原理与实现](docs/原理与实现.md)。
+
 ## What is different in this fork
 
 - **Blind annotation and model review are separate modes.** Blind tasks contain no predictions or existing human labels. Review tasks show one experiment strategy at a time, using Argilla Suggestions rather than Responses for machine labels.

@@ -175,5 +175,3 @@ To help our community with the creation of contributions, we have created our [c
 <img  src="https://contrib.rocks/image?repo=argilla-io/argilla" />
 
 </a>
-
-

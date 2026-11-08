@@ -26,4 +26,3 @@ $('#mrun').onclick=async()=>{let limit=Number($('#limit').value);if(!Number.isIn
 
 document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{view=b.dataset.view;render()});load().catch(e=>toast(e.message));
 </script></html>
-
