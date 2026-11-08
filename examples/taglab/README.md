@@ -24,6 +24,8 @@ An opt-in live check exercised four synthetic records in a separate QA workspace
 
 Two real user blind annotations have since been submitted through the browser, pulled, validated, staged and explicitly accepted after assisted evidence review. The existing five references remained unchanged, bringing the local total to seven. This is one person's labelling followed by assistant review, not an independent dual-human agreement study. A new offline rule run used four pilot references across 20 inputs while preserving all six earlier experiment snapshots; no model requests were made in that check. The extension/workbench suite now has 32 passing tests.
 
+A subsequent ten-record paired model run made 20 real requests; 18 outputs passed structural/quotation checks. Two mechanically valid but semantically questionable candidates were sent to a separate live review dataset as Suggestions, with no human Responses. One existing reference-evidence question is pending, so the small run is not used to choose a winning strategy. See [the run notes and limitations](docs/PILOT-20261108.md).
+
 ## Run the extension tests
 
 From this directory (`examples/taglab`), with Python 3.11:

@@ -16,7 +16,7 @@ Real fork SDK object construction, serialization, custom/default transport behav
 
 Offline authentication uses `httpx.MockTransport`, explicitly labelled in CLI output and docs. This is a contract test, not a live Argilla service.
 
-The companion workbench's existing model API was tested separately with real Qwen requests. Those results do not prove Argilla-server integration. No raw corpus or private model output is included in this repository.
+The companion workbench's model API was tested with real Qwen requests. The later ten-record paired run and the live model-review dataset checks are documented in [the pilot run notes](PILOT-20261108.md). Model transport success is not used as proof of classification quality. No raw corpus or private model output is included in this repository.
 
 ## Live deployment checked on 2026-11-08
 

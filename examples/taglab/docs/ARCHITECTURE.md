@@ -6,7 +6,7 @@ A sample is `(record_id, title, cleaned_text, input_hash, split, reference_revis
 
 A different cleaning result is a different observation. The model and the human must see the same text for an outcome to be comparable. The bridge rejects response imports if input or reference revisions changed, rather than attaching a judgment to the wrong revision.
 
-The source programme and RSS category are intentionally absent from the annotation fields and model input. Otherwise a classifier could learn or exploit channel identity instead of the episode's content. This reduces one leakage route; it does not eliminate collection bias.
+Dedicated source-programme and RSS-category fields are omitted from model requests. The supplied title or description can still mention the programme, so source identity is not guaranteed to be absent from the actual text. Omitting those fields reduces one leakage route; it does not eliminate source cues or collection bias.
 
 ## 2. Argilla is a collaboration layer
 
