@@ -1,68 +1,76 @@
-# Architecture and evaluation
+**简体中文** | [English](ARCHITECTURE.en.md)
 
-## 1. The unit of work is a versioned observation
+# 系统架构与评测设计
 
-A sample is `(record_id, title, cleaned_text, input_hash, split, reference_revision)`. The hash uses canonical JSON with sorted keys and SHA-256 over the exact title and text. It detects accidental changes; it is not a digital signature or authentication mechanism. Origin validation and server credentials still matter.
+## 1. 以带版本的输入为工作单位
 
-A different cleaning result is a different observation. The model and the human must see the same text for an outcome to be comparable. The bridge rejects response imports if input or reference revisions changed, rather than attaching a judgment to the wrong revision.
+一个样本包含记录 ID、标题、清洗后的正文、输入哈希、数据分组与参考版本。哈希由精确标题和正文的规范化 JSON 计算，使用 SHA-256 检查内容是否发生变化。它用于内容一致性检查，不能代替登录授权或数字签名。
 
-Dedicated source-programme and RSS-category fields are omitted from model requests. The supplied title or description can still mention the programme, so source identity is not guaranteed to be absent from the actual text. Omitting those fields reduces one leakage route; it does not eliminate source cues or collection bias.
+人和模型应判断同一份文字。清洗结果改变，就形成不同的观察输入；桥接工具在回收回答时检查输入与参考版本，避免把判断挂到错误的资料上。已经接收、内容完全相同的提案可重复同步而不重复写入。
 
-## 2. Argilla is a collaboration layer
+模型请求不单独传入来源节目名和 RSS 分类字段，但标题或简介里仍可能出现节目名称。减少这类字段只能降低一条来源泄漏路径，不能消除文字中的来源线索或采样偏差。
 
-The SDK sends Settings (the task schema), Records (inputs), Suggestions (machine proposals), and receives Responses (each user's submitted answers). Those objects have different roles. Changing a Suggestion to a Response without a real human submission would fabricate supervision.
+## 2. 两层应用的分工
 
-The service architecture supplied upstream has a web frontend, a Python API, relational persistence, a search engine, Redis and background workers. The relational store holds durable records and responses; Elasticsearch supports indexed retrieval/filtering; Redis supports background work. None of these components replaces the language model. The companion TagLab service calls the model, records experiments, and applies project-specific validation.
+TagLab 工作台管理语料、清洗记录、人工参考和模型实验，负责调用模型、检查输出与计算指标。Argilla 提供标注任务、模型建议和用户回答的协作结构，桥接扩展负责两边的数据交换。
 
-This extension keeps Argilla's core unchanged and adds an application module. Its contribution is the task schema, versioned exchange protocol, evidence checks and proposal staging. A Fork establishes code provenance and a place to maintain changes; by itself it is not an integration.
+上游服务包含网页前端、Python API、关系数据库、Elasticsearch、Redis 与后台 worker。关系数据库保存记录和回答；Elasticsearch 支持检索与筛选；Redis 配合后台任务。大模型由 TagLab 单独调用，不会因为启动这些服务而自动运行。
 
-## 3. Two distinct human workflows
+本应用保留上游网页与服务端源码，新增工作台、交换协议、依据校验、提案暂存及评测逻辑。Fork 记录代码来源；运行中的 SDK 交换和服务验收则用于证明实际集成。
 
-**Blind annotation:** expose only title, input text and label definitions. Existing gold and model labels are not sent. Human submissions become proposals, not immediate truth. Distinct annotators remain separate. An adjudicator can inspect disagreement and accept one response with a written reason.
+## 3. 两种人工工作流
 
-**Model review:** show a single experiment/strategy candidate. This mode asks whether the evidence supports the candidate. It helps diagnose failures, but the reviewer has seen the prediction, so it is not an independent gold-labeling process. The local bridge refuses automatic promotion of model-visible responses to independent references.
+**独立盲标**只展示标题、实际输入和标签规范，不发送既有参考或机器标签。用户回答先进入提案，再经明确裁决更新参考。多个回答者的意见分别保留，不用“最后一次提交”覆盖所有人。
 
-A/B candidates use separate dataset fingerprints. Argilla Suggestions are one candidate per question; mixing A and B into a single suggestion would destroy experiment provenance.
+**机器复核**展示某个实验、某个策略的候选，另问原文是否支持结论。看过候选会产生锚定影响，所以该模式用于分析错误，不会通过盲标入口自动形成独立参考。
 
-## 4. Classification and inference
+Argilla 中的 Record 是输入，Suggestion 是机器建议，Response 是带用户身份与状态的回答。提案暂存层在它们之上增加版本和裁决检查。机器建议不能直接冒充人工提交。
 
-Topic prediction is multi-label: the output is a set of up to three labels. Programme format is a single-label decision with an explicit unknown option. A prompt conditions the model's next-token distribution; it does not retrain model weights. The current workbench calls an external Qwen endpoint with the same model, input and generation parameters for A/B. A supplies label names; B supplies definitions and counterexamples; both use a shared JSON and quotation contract.
+A/B 候选使用独立的数据集指纹。一个问题的一条建议对应明确的实验与策略，不把 A/B 混成同一个来源。
 
-Temperature and fixed input reduce some variation, but a single call is still not a deterministic scientific result. An A/B improvement needs paired samples, sufficient independent references and repeated validation. Updating both the output contract and prompt definitions at once prevents attributing a change to only one factor.
+## 4. 分类与模型推断
 
-The workflow does not currently perform RAG, embeddings, fine-tuning or RLHF. Argilla data could later support supervised training, but collecting feedback does not itself train a model.
+主题是最多 3 项的多标签分类，节目形式是带 `unknown` 选项的单标签分类。A 提供标签 ID 和名称；B 增加定义与反例；两组使用同一模型、输入、生成参数和 JSON / 连续原文协议。
 
-## 5. Evidence checks are a layered contract
+提示词影响生成过程，不会训练或修改模型权重。较低温度和固定输入能减少部分波动，但一次生成仍不足以证明稳定改进；比较需要配对样本、足够独立参考与重复验证。
 
-1. **Transport:** request completed, or an explicit timeout/quota/authentication failure stops the run.
-2. **Syntax:** response is parseable JSON.
-3. **Schema:** known label IDs, topic cardinality, programme format, boolean review state.
-4. **Quotation integrity:** each required quote is a continuous substring of the exact input. A fragment assembled with ellipses is rejected.
-5. **Semantic support:** does this quote justify this label under the guideline? This is a separate human judgment.
-6. **Decision readiness:** a valid output with `needs_review` still needs review before use.
+本项目当前没有执行 RAG、向量检索、微调或 RLHF。积累反馈以后可以支持其他训练工作，但收集反馈本身不是训练。
 
-For example, a passage saying a podcast analyses a published report does not establish that only one person speaks. Such a quotation can be genuine while the monologue label remains unsupported. This is why quotation matching cannot be advertised as a hallucination detector or factual certification.
+## 5. 分层校验
 
-## 6. Evaluating quality and abstention
+1. **接口**：调用成功，或出现超时、额度、鉴权错误并明确停止。
+2. **语法**：输出是可解析的 JSON。
+3. **结构**：标签 ID、数量、节目形式和复核状态符合约定。
+4. **引用一致性**：要求的片段逐字连续出现在本次输入中，省略号拼接会被拒绝。
+5. **语义支持**：这段原文是否足以支持该标签，需要另外判断。
+6. **可采用性**：合法输出仍可能请求复核，不能直接视为可自动发布。
 
-For a predicted topic set P and a human reference G, count TP = |P ∩ G|, FP = |P − G|, FN = |G − P| across samples. Micro precision = TP/(TP+FP), recall = TP/(TP+FN), and F1 = 2TP/(2TP+FP+FN). Per-label support must accompany the aggregate: a high score on one frequent class says little about unseen classes.
+例如，简介说节目分析了公开报道，并不能证明只有一个人讲话。引用可以是真的，独白判断仍可能缺少依据。因此，字符串校验不能作为事实真实性或全部幻觉的检测保证。
 
-Format accuracy measures format agreement. Exact match requires both the whole topic set and format to match. The workbench's end-to-end score counts invalid outputs as failures. It must be shown alongside schema pass rate and semantic error categories, because a zero caused by invalid serialization is different from valid but incorrect classification.
+人工复制引用时，只有清理首尾空白后仍精确匹配原文才允许规范化，并保存前后值。内部文字和标点不自动修复；模型输出校验不变。
 
-The workbench presently scores all structurally valid predictions including those requesting review. Therefore those scores do not measure automatic publication readiness. A production decision policy should additionally report auto-accept coverage, human-review rate, and error rate among auto-accepted outputs. This distinction is documented, not silently hidden in a single accuracy number.
+## 6. 指标与复核成本
 
-## 7. Splits, bias and audit
+预测主题集合为 P，人工参考为 G。按样本汇总 TP = |P ∩ G|、FP = |P − G|、FN = |G − P|，计算精确率 TP/(TP+FP)、召回率 TP/(TP+FN) 和 micro F1 = 2TP/(2TP+FP+FN)。同时保留每个标签的样本支持数。
 
-Pilot samples expose ambiguous guidelines. Development samples support strategy iteration. Holdout samples are reserved for a frozen evaluation. The development bridge excludes holdout records by construction. Existing hand-labeled holdout samples are retained locally rather than shown with development suggestions.
+形式匹配率单独计算；完全匹配要求主题集合与节目形式都一致。端到端评分把无效输出计为未命中，因此要一起报告机械通过率和错误类别，区分序列化失败与内容判断差异。
 
-The current local corpus is small and comes from two programmes, skewed toward business and technology. Random per-source splitting and exact-title grouping do not establish independence or remove near-duplicate content. Before a defensible benchmark, add topic diversity, inspect near-duplicates, use more than one annotator on a subset, measure disagreement, and adjudicate. No benchmark claim follows from one or two references.
+当前评分也比较带复核标记的合法预测，不代表自动采用后的正确率。实际业务还需统计自动采用覆盖率、人工介入率及自动采用部分的错误率。
 
-Each model run preserves inputs, taxonomy, prompts, output contract, parameters, usage and errors. Each human change preserves actor and revision. Import failures and accepted proposals are auditable. These are reproducibility and quality-control mechanisms, not guarantees that a human reference is infallible.
+参考修改后，`reference_audit.py` 可以复用原输出另存敏感性分析。输入与规范必须一致，旧实验不变；分数变化来自参考修订，不代表模型能力变化。事后修订也不能当成新的独立测试。
 
-## Sources
+## 7. 数据分组与审计
 
-- Upstream repository and license: https://github.com/argilla-io/argilla
-- Records: https://docs.argilla.io/latest/reference/argilla/records/records/
-- Responses: https://docs.argilla.io/latest/reference/argilla/records/responses/
-- Suggestions: https://docs.argilla.io/latest/reference/argilla/records/suggestions/
-- Deployment: https://docs.argilla.io/latest/getting_started/how-to-deploy-argilla-with-docker/
+试标集用于发现规范歧义，开发集用于改进策略，留出集用于冻结版本后的验收。开发桥接不导出留出数据，已有的留出参考保留在本机。
+
+当前语料来自两档偏商业、科技的节目，样本与类别分布有限。按来源分组和精确标题去重并不能保证完全独立。后续仍需增加主题覆盖、检查近重复，并由多名独立标注者对部分样本进行分歧检查与裁决。
+
+每次实验保存输入、规范、提示词、输出协议、参数、用量和错误；人工修改保存执行者与版本。部分早期实验没有保存参考数字修订号，追溯时使用原内容哈希，不补造版本号。这些记录用于追溯与质量控制，不表示人工参考永远正确。
+
+## 参考资料
+
+- [Argilla 上游仓库与许可证](https://github.com/argilla-io/argilla)
+- [Records](https://docs.argilla.io/latest/reference/argilla/records/records/)
+- [Responses](https://docs.argilla.io/latest/reference/argilla/records/responses/)
+- [Suggestions](https://docs.argilla.io/latest/reference/argilla/records/suggestions/)
+- [Docker 部署说明](https://docs.argilla.io/latest/getting_started/how-to-deploy-argilla-with-docker/)

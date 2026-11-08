@@ -1,60 +1,63 @@
-# Fork changes and validation boundaries
+**简体中文** | [English](VALIDATION.en.md)
 
-## Source changes
+# 改动、验证记录与使用范围
 
-- `argilla/pyproject.toml`: declare `requests`, imported by the SDK's field module but absent from its dependency list in the checked-out base.
-- `argilla/src/argilla/_api/_http/_client.py`: accept an explicitly supplied HTTP transport without passing `transport` twice. Normal transport construction and authentication headers remain covered by tests.
-- `examples/taglab/taglab_argilla.py`: task schema, immutable bundles, blind/review modes, machine Suggestions, human proposal decoding and status-preserving export.
-- `examples/taglab/workbench/`: standalone companion UI/backend and bridge. The public tree excludes all local corpus, human responses, experiment dumps and keys.
-- `examples/taglab/compose.yaml`: localhost server configuration using the official release image. No server/frontend fork modifications are claimed.
+## 代码改动
 
-The generic upstream `Record.to_dict()` representation omits Response status. The application export iterates actual SDK Response objects to preserve submitted/draft/discarded state; it does not assume a missing status means submitted.
+- `argilla/pyproject.toml`：补充 SDK 实际导入的 `requests` 依赖。
+- `argilla/src/argilla/_api/_http/_client.py`：支持显式传入 HTTP transport，避免重复传参，并覆盖默认与自定义路径的测试。
+- `taglab_argilla.py`：任务结构、不可覆盖的导出包、盲标与机器复核、建议与回答的转换、提交状态保留及引用检查。
+- `workbench/`：本地界面、数据管理、模型实验、桥接和参考修订分析。
+- `compose.yaml`：只开放本机网页端口、使用官方服务镜像的部署配置。
 
-## What is tested
+公开目录不包含私人语料、用户回答、完整实验输出和密钥。项目未修改上游网页与服务端源码。
 
-Real fork SDK object construction, serialization, custom/default transport behavior, human-response round trip, multiple authors, draft exclusion, blind-mode leakage, holdout exclusion, original text checks, quote integrity, staged import, rollback, reference revision conflict and explicit adjudication. Fixtures are synthetic and isolated in temporary databases.
+## 自动测试覆盖
 
-Offline authentication uses `httpx.MockTransport`, explicitly labelled in CLI output and docs. This is a contract test, not a live Argilla service.
+当前 40 项测试使用真实 Fork SDK 对象、合成样本和独立数据库，覆盖序列化、HTTP transport、回答往返、多作者、草稿过滤、盲标泄漏、留出排除、原文与引用校验、暂存去重、事务回滚、版本冲突、显式裁决、引用边界空白和参考修订分析。
 
-The companion workbench's model API was tested with real Qwen requests. The later ten-record paired run and the live model-review dataset checks are documented in [the pilot run notes](PILOT-20261108.md). Model transport success is not used as proof of classification quality. No raw corpus or private model output is included in this repository.
+离线认证使用 `httpx.MockTransport`，明确标记为模拟。上游 `Record.to_dict()` 不保留回答状态，因此扩展逐个读取 Response 对象，保留 submitted / draft / discarded，不把缺失状态默认视为已提交。
 
-## Live deployment checked on 2026-11-08
+模型可见的反馈不能从盲标入口晋升为独立参考。参考复算在输入或规范不一致时拒绝复用，仍需复核的参考不会进入新评分。
 
-Docker Desktop's WSL 2 Linux engine started after the required Windows restart. All five Compose services ran; PostgreSQL, Elasticsearch and Redis health checks passed, the Argilla web page returned HTTP 200, and the browser login succeeded. Eighteen previously unannotated pilot inputs were bulk-uploaded and visibly present in the annotation page. They contained neither existing references nor model suggestions, and excluded holdout records. The first pull returned zero submitted proposals, as expected before a new annotation. The existing five local references and six experiment records were preserved.
+## 真实部署与服务往返
 
-The opt-in `live_smoke.py` uses the real server and a separate synthetic QA workspace. Four records verify valid submitted-response decoding, draft exclusion, exact-quote rejection and remote-input integrity rejection. The single valid proposal is staged twice without updating references, then explicitly adjudicated only in an isolated fixture database; a second adjudication is rejected. Its responses are authored by `taglab-qa-bot` and are explicitly automated fixtures. No real quality score or human-label count is inferred from them.
+2026-11-08，Windows 重新启动后，Docker Desktop 的 WSL 2 Linux 引擎就绪。5 个 Compose 服务运行，PostgreSQL、Elasticsearch 和 Redis 健康检查通过，Argilla 首页返回 HTTP 200，网页登录成功。
 
-The initial Elasticsearch start failed because an ARM-specific `-XX:UseSVE=0` option was unsupported by this image's x86-64 JVM. The option was removed, then service startup was verified. Initial Docker registry downloads also timed out until Docker was configured to use the machine's existing local HTTP proxy; no registry mirror or unverified image source was substituted.
+18 条此前未标注的 pilot 输入已上传并在网页显示，不含人工参考、机器建议或留出样本。初次拉取为 0 个回答，符合尚未提交的状态。
 
-The fork SDK reports `2.8.0.dev0`; these dataset upload and synthetic submitted-response round trips passed against the official `v2.8.0` server image. This verifies the exercised paths, not all SDK/server combinations. Dependency deprecation warnings from upstream Pydantic configuration remain visible.
+`live_smoke.py` 在独立 QA 工作空间上传 4 条合成记录，验证有效提交、草稿忽略、非连续引用拒绝和远端输入被改动时的拒绝。有效提案只在隔离的 fixture 数据库中暂存和裁决；重复暂存不重复写入，重复裁决被拒绝。这些自动测试回答不计入真实人工参考或模型分数。
 
-## Real human round trip
+部署过程中修正了当前 x86-64 镜像 JVM 不支持的 `-XX:UseSVE=0` 参数。镜像下载曾超时，配置为使用电脑已有的本地 HTTP 代理后成功；没有替换为未经验证的镜像来源。
 
-Two user-submitted blind responses were pulled from the real annotation page: both passed integrity, status, version and quotation checks. Their technology/business topics and interview format were reviewed against the supplied text, then explicitly accepted with original author and assisted-adjudication reasons retained. No prior reference was replaced. The local reference total increased from five to seven; this is not independent dual-human agreement and does not establish the truth of the source descriptions.
+Fork SDK 报告 `2.8.0.dev0`，已验证上述上传、回传路径与官方 `v2.8.0` 服务的兼容。该结论只覆盖实际走过的路径，不代表所有组合都兼容。上游 Pydantic 弃用警告仍保留。
 
-A new offline rule run included four eligible pilot references across 20 pilot records. All six earlier experiment bodies remained unchanged. This checks reference ingestion and immutable experiment history, not an improvement in model quality. Model credentials were absent, so this step made no model requests.
+## 真实用户操作与重复同步
 
-Repeated synchronization initially exposed a revision conflict after a proposal was accepted. Exact accepted replays are now counted as no-ops before checking the changed local revision; later answers from the same bundle remain importable. Bundle provenance and stale unaccepted proposals are still checked. Three regression cases cover accepted replay, mixed old/new answers and cross-bundle replay; the existing stale-reference test also covers already staged proposals. The full suite has 32 passing tests.
+用户在网页提交的 2 条盲标经过状态、输入、规范、版本和引用检查，再经辅助依据复核与显式裁决接收。保留作者和理由，本地参考由 5 条增至 7 条。单人标注加助手复核不等于独立双人一致性实验，也不认证简介中的事实。
 
-## What remains unverified
+随后一轮离线规则实验在 20 条 pilot 输入中使用 4 条有效参考，旧的 6 次实验正文保持原样。一次提案接收后重复同步曾触发版本冲突，现已修复：完全相同的已接收提案按无操作处理，新回答仍可从同一批次导入；未接收的过期提案和跨批次来源仍受检查。
 
-Broad multi-user operations, independent annotator agreement, production deployment and larger model-quality evaluation are outside this acceptance run. More diverse references are needed before comparing model strategies reliably.
+## 模型实验与复核收尾
 
-## Reproduction
+固定 10 条样本的真实 A/B 运行发出 20 次请求，18 次输出通过格式与连续引用校验。后续语义复核发现了引用存在但不充分支持结论的案例，已通过独立的 review 数据集记录反馈。
 
-From examples/taglab, install requirements-lock.txt into Python 3.11, then run:
+用户最终保留两条独白意见并标记争议，不计独立参考；另明确取消一个原参考标签。原始回答保留，参考修订后只复用已有输出另存分析。输入与预测哈希、原实验和原导出快照已核验，本次复算无新增模型调用。详见 [实验记录](PILOT-20261108.md)。
 
-```powershell
-python -m pytest tests workbench -q
-python taglab_argilla.py validate path/to/local/bundle.json
-```
+人工粘贴的引用只有在清理首尾空白后能逐字匹配原文时才规范化，并记录前后值。内部改写、标点差异和省略号拼接仍无效，模型校验规则没有放宽。
 
-For the companion UI, run `python workbench/app.py`. A new checkout has no corpus: collect permitted public RSS metadata with `python workbench/scripts/collect_podcasts.py`, then start the app. No model call occurs during import or offline validation. A model API key must be entered in the local UI to run model experiments.
+## 仍未覆盖
 
-A user response is a claimed human submission, not proof of truth or independence. A bundle hash is an integrity/version check, not a cryptographic signature. Semantic support still requires review.
+大规模多用户操作、独立标注者一致性、生产部署与更大规模的模型质量评测不在当前验收范围。比较策略前还需要更多类别的独立参考。用户提交、内容哈希与原文匹配都不能单独证明一个判断正确。
 
-## Fork workflow notification fix
+## 复现入口
 
-The inherited SDK build matrix failed on Python 3.13 while installing pyzmq 26.2.0 (`Use build.targets instead of cmake.targets for scikit-build-core >= 0.10`). It did not reach application tests. The separately maintained TagLab extension workflow passed in GitHub Actions.
+在 `examples/taglab` 中安装依赖后，执行 `python -m pytest tests workbench -q`。使用 `python taglab_argilla.py validate path/to/bundle.json` 检查本地导出包。
 
-Upstream release, documentation, cloud and legacy workflows now have job-level `github.repository == 'argilla-io/argilla'` guards. The TagLab workflow remains active, and a policy test checks those guards. This does not erase old failures or suppress all GitHub notifications; it prevents this fork from running upstream-only infrastructure jobs. The project does not claim full Python 3.13 compatibility.
+工作台使用 `python workbench/app.py` 启动。新下载的代码不含语料，先通过 `workbench/scripts/collect_podcasts.py` 准备允许使用的数据。离线验证不调用模型；模型实验需要在本地页面配置自己的密钥。
+
+## Fork 工作流与旧邮件
+
+继承的上游 SDK 流程曾在 Python 3.13 安装 pyzmq 26.2.0 开发依赖时失败，尚未执行应用测试。独立的 TagLab 扩展测试流程通过。
+
+上游专用的发布、文档、云和旧版 jobs 已增加 `github.repository == 'argilla-io/argilla'` 条件；本 Fork 的 TagLab 测试仍启用。这避免误跑上游基础设施任务，不会删除历史失败记录，也不代表整个上游 SDK 已支持所有 Python 3.13 路径。

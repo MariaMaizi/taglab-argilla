@@ -1,177 +1,45 @@
-# TagLab: Argilla 扩展版
+**简体中文** | [English](README.en.md)
 
-这个 Fork 用于播客文字标签的标注、模型评测与错误复核。应用代码和说明见 **[examples/taglab](examples/taglab/README.md)**，其中包含可运行的本地工作台、Argilla SDK 适配器、测试和部署配置。
+# TagLab · 内容标注与模型评测工作台
 
-新增能力包括盲标与机器复核分离、连续原文依据校验、人工回答暂存与显式裁决、输入与规范版本检查。也修复了 SDK 干净安装缺少依赖和自定义 transport 参数重复的问题。上游许可证与原始介绍保留如下。
+TagLab 把人工标注、模型 A/B 输出和错误复核放在同一条流程里。遇到一个判断时，可以回看模型读过的文字、它引用的依据、人的修改，以及修改前后的评分。
 
-目前已完成本地 Docker 部署、18 条待标样本上传，以及 2 条真实用户网页标注的回传、引用校验和显式裁决。原有 5 条参考和历史实验保持原样。同一批任务可以继续标注、重复同步，不会把已接收结果重复写入。自动测试样本不计入人工参考，单人标注加辅助复核也不代表独立双人共识。
+当前以播客标题与简介分类为例：选择主要主题和节目形式，附上原文依据；资料不足时允许保留“无法判断”。项目基于 [Argilla](https://github.com/argilla-io/argilla) 扩展，应用代码位于 [examples/taglab](examples/taglab/README.md)。
 
----
+## 主要功能
 
-> [!IMPORTANT]
-The original authors have moved on to exciting new projects! The codebase is mature and stable, having served users reliably for years. While we won't be adding new features going forward, we're committed to solve bug fixes and publish patches as needed.
-If you're interested in helping maintain or extend this project, we'd love to hear from you! Please open an issue to discuss becoming a maintainer - we're looking for dedicated contributors who can take ownership of the project's future development.
->
-<h1 align="center">
-  <a href=""><img src="https://github.com/dvsrepo/imgs/raw/main/rg.svg" alt="Argilla" width="150"></a>
-  <br>
-  Argilla
-  <br>
-</h1>
-<h3 align="center">Build high quality datasets for your AI models</h3>
+- **独立标注**：先读资料再判断，盲标任务不显示机器建议和已有参考。
+- **模型 A/B 对比**：相同输入与生成参数下，对比基础提示词和带定义、反例的提示词。
+- **依据检查**：校验引用是否逐字连续出现在输入中，再单独复核它是否支持结论。
+- **反馈与裁决**：保留回答者、争议、输入版本和裁决理由，机器建议与人工参考分开保存。
+- **历史与复算**：旧实验保留原快照；参考修订后可复用原输出另做分析，记录分数为什么变化。
 
-<p align="center">
-<a  href="https://pypi.org/project/argilla/">
-<img alt="CI" src="https://img.shields.io/pypi/v/argilla.svg?style=flat-round&logo=pypi&logoColor=white">
-</a>
-<img alt="Codecov" src="https://codecov.io/gh/argilla-io/argilla/branch/main/graph/badge.svg?token=VDVR29VOMG"/>
-<a href="https://pepy.tech/project/argilla">
-<img alt="CI" src="https://static.pepy.tech/personalized-badge/argilla?period=month&units=international_system&left_color=grey&right_color=blue&left_text=pypi%20downloads/month">
-</a>
-<a href="https://huggingface.co/new-space?template=argilla/argilla-template-space">
-<img src="https://huggingface.co/datasets/huggingface/badges/raw/main/deploy-to-spaces-sm.svg"/>
-</a>
-</p>
+流程：**公开资料 → 清洗与版本记录 → 人工盲标 / 模型实验 → 依据校验 → 争议复核 → 显式裁决 → 评测与归档**。
 
-<p align="center">
-<a href="https://twitter.com/argilla_io">
-<img src="https://img.shields.io/badge/twitter-black?logo=x"/>
-</a>
-<a href="https://www.linkedin.com/company/argilla-io">
-<img src="https://img.shields.io/badge/linkedin-blue?logo=linkedin"/>
-</a>
-<a href="http://hf.co/join/discord">
-<img src="https://img.shields.io/badge/Discord-7289DA?&logo=discord&logoColor=white"/>
-</a>
-</p>
+## 已完成的验证
 
-Argilla is a collaboration tool for AI engineers and domain experts who need to build high-quality datasets for their projects.
+截至 2026-11-08，已完成本地 Docker 部署、网页标注与回传、同一批任务的重复同步，以及模型候选的独立复核任务。应用测试共 **40 项通过**。
 
-If you just want to get started, [deploy Argilla on Hugging Face Spaces](https://argilla-io.github.io/argilla/latest/getting_started/quickstart/). Curious, and want to know more? Read our [documentation](https://argilla-io.github.io/argilla/latest/).
+一次固定 10 条输入的真实 A/B 运行发出 20 次请求，18 次输出通过格式与连续引用检查。后续发现了引用存在但不足以证明节目形式的案例，也保留了用户与规范之间的争议。参考修订后的评分单独保存，原输出和旧分数不被覆盖。
 
-Or, play with the Argilla UI by signing in with your Hugging Face account:
+本机目前保留 7 条人工参考与 8 次实验。样本集中在两档偏商业、科技的节目，参考数量较少；这些记录用于验证流程和发现问题，不能作为模型整体质量或策略优胜的结论。详见 [小样本实验记录](examples/taglab/docs/PILOT-20261108.md)。
 
-<p>
-  <a href="https://huggingface.co/spaces/argilla/argilla-template-space" title="Redirect to homepage">
-    <img src="https://github.com/user-attachments/assets/b9f34620-dd5e-4738-9750-0a85a4caae00" alt="homepage" />
-  </a>
-</p>
+## 阅读入口
 
-## Why use Argilla?
+| 内容 | 中文 | English |
+| --- | --- | --- |
+| 使用、安装与测试 | [使用说明](examples/taglab/README.md) | [Guide](examples/taglab/README.en.md) |
+| 约 3 分钟的演示 | [Demo 步骤](examples/taglab/docs/DEMO.md) | [Demo](examples/taglab/docs/DEMO.en.md) |
+| 技术原理与案例 | [原理与实现](examples/taglab/docs/原理与实现.md) | [Principles](examples/taglab/docs/PRINCIPLES.en.md) |
+| 架构与指标 | [架构与评测](examples/taglab/docs/ARCHITECTURE.md) | [Architecture](examples/taglab/docs/ARCHITECTURE.en.md) |
+| 验证范围与限制 | [验证记录](examples/taglab/docs/VALIDATION.md) | [Validation](examples/taglab/docs/VALIDATION.en.md) |
+| 实际实验与复核 | [实验记录](examples/taglab/docs/PILOT-20261108.md) | [Pilot notes](examples/taglab/docs/PILOT-20261108.en.md) |
+| 开源来源 | [上游说明](examples/taglab/UPSTREAM.md) | [Provenance](examples/taglab/UPSTREAM.en.md) |
 
-Argilla can be used for collecting human feedback for a wide variety of AI projects like traditional NLP (text classification, NER, etc.), LLMs (RAG, preference tuning, etc.), or multimodal models (text to image, etc.). Argilla's programmatic approach lets you build workflows for continuous evaluation and model improvement. The goal of Argilla is to ensure your data work pays off by quickly iterating on the right data and models.
+新下载的仓库只包含代码、文档和合成测试数据。原始语料、私人标注、完整实验输出和密钥保留在本机；安装及数据准备见使用说明。
 
-### Improve your AI output quality through data quality
+## 与上游的关系
 
-Compute is expensive and output quality is important. We help you focus on data, which tackles the root cause of both of these problems at once. Argilla helps you to **achieve and keep high-quality standards** for your data. This means you can improve the quality of your AI output.
+本仓库是 Argilla 的应用扩展 Fork。新增工作台、数据交换、依据校验和评测逻辑，并修复了 SDK 的依赖声明和自定义 HTTP transport 传参问题。网页标注服务使用官方 `v2.8.0` 镜像，未修改上游网页和服务端源码。
 
-### Take control of your data and models
-
-Most AI tools are black boxes. Argilla is different. We believe that you should be the owner of both your data and your models. That's why we provide you with all the tools your team needs to **manage your data and models in a way that suits you best**.
-
-### Improve efficiency by quickly iterating on the right data and models
-
-Gathering data is a time-consuming process. Argilla helps by providing a tool that allows you to **interact with your data in a more engaging way**. This means you can quickly and easily label your data with filters, AI feedback suggestions and semantic search. So you can focus on training your models and monitoring their performance.
-
-## 🏘️ Community
-
-We are an open-source community-driven project and we love to hear from you. Here are some ways to get involved:
-
-- [Community Meetup](https://lu.ma/embed-checkout/evt-IQtRiSuXZCIW6FB): listen in or present during one of our bi-weekly events.
-
-- [Discord](http://hf.co/join/discord): get direct support from the community in #argilla-distilabel-general and #argilla-distilabel-help.
-
-- [Roadmap](https://github.com/orgs/argilla-io/projects/10/views/1): plans change but we love to discuss those with our community so feel encouraged to participate.
-
-## What do people build with Argilla?
-
-### Open-source datasets and models
-
-The community uses Argilla to create amazing open-source [datasets](https://huggingface.co/datasets?library=library:argilla&sort=trending) and [models](https://huggingface.co/models?other=distilabel).
-
-- [Cleaned UltraFeedback dataset](https://huggingface.co/datasets/argilla/ultrafeedback-binarized-preferences-cleaned) used to fine-tune the [Notus](https://huggingface.co/argilla/notus-7b-v1) and [Notux](https://huggingface.co/argilla/notux-8x7b-v1) models. The original UltraFeedback dataset was curated using Argilla UI filters to find and report a bug in the original data generation code. Based on this data curation process, Argilla built this new version of the UltraFeedback dataset and fine-tuned Notus, outperforming Zephyr on several benchmarks.
-- [distilabel Intel Orca DPO dataset](https://huggingface.co/datasets/argilla/distilabel-intel-orca-dpo-pairs) used to fine-tune the [improved OpenHermes model](https://huggingface.co/argilla/distilabeled-OpenHermes-2.5-Mistral-7B). This dataset was built by combining human curation in Argilla with AI feedback from distilabel, leading to an improved version of the Intel Orca dataset and outperforming models fine-tuned on the original dataset.
-
-### Examples Use cases
-
-AI teams from organizations such as the [Red Cross](https://510.global/), [Loris.ai](https://loris.ai/) and [Prolific](https://www.prolific.com/) use Argilla to improve the quality and efficiency of AI projects. They shared their experiences in our [AI community meetup](https://lu.ma/embed-checkout/evt-IQtRiSuXZCIW6FB).
-
-- AI for good: [the Red Cross presentation](https://youtu.be/ZsCqrAhzkFU?feature=shared) showcases how the Red Cross domain experts and AI team collaborated by classifying and redirecting requests from refugees of the Ukrainian crisis to streamline the support processes of the Red Cross.
-- Customer support: during [the Loris meetup](https://youtu.be/jWrtgf2w4VU?feature=shared) they showed how their AI team uses unsupervised and few-shot contrastive learning to help them quickly validate and gain labeled samples for a huge amount of multi-label classifiers.
-- Research studies: [the showcase from Prolific](https://youtu.be/ePDlhIxnuAs?feature=shared) announced their integration with our platform. They use it to actively distribute data collection projects among their annotating workforce. This allows Prolific to quickly and efficiently collect high-quality data for research studies.
-
-## 👨‍💻 Getting started
-
-### Installation
-
-First things first! You can install the SDK with pip as follows:
-
-```console
-pip install argilla
-```
-
-After that, you will need to deploy Argilla Server. The easiest way to do this is through our [free Hugging Face Spaces deployment integration](https://huggingface.co/new-space?template=argilla/argilla-template-space).
-
-To use the client, you need to import the `Argilla` class and instantiate it with the API URL and API key.
-
-```python
-import argilla as rg
-
-client = rg.Argilla(api_url="https://[your-owner-name]-[your_space_name].hf.space", api_key="owner.apikey")
-```
-
-### Create your first dataset
-
-We can now create a dataset with a simple text classification task. First, you need to define the dataset settings.
-
-```python
-settings = rg.Settings(
-    guidelines="Classify the reviews as positive or negative.",
-    fields=[
-        rg.TextField(
-            name="review",
-            title="Text from the review",
-            use_markdown=False,
-        ),
-    ],
-    questions=[
-        rg.LabelQuestion(
-            name="my_label",
-            title="In which category does this article fit?",
-            labels=["positive", "negative"],
-        )
-    ],
-)
-dataset = rg.Dataset(
-    name=f"my_first_dataset",
-    settings=settings,
-    client=client,
-)
-dataset.create()
-```
-
-Next, we can add records to the dataset.
-
-```bash
-pip install datasets
-```
-
-```python
-from datasets import load_dataset
-
-data = load_dataset("imdb", split="train[:100]").to_list()
-dataset.records.log(records=data, mapping={"text": "review"})
-```
-
-🎉 You have successfully created your first dataset with Argilla. You can now access it in the Argilla UI and start annotating the records.
-Need more info, check out [our docs](https://argilla-io.github.io/argilla/latest/).
-
-## 🥇 Contributors
-
-To help our community with the creation of contributions, we have created our [community](https://argilla-io.github.io/argilla/latest/community/) docs. 
-
-<a  href="https://github.com/argilla-io/argilla/graphs/contributors">
-
-<img  src="https://contrib.rocks/image?repo=argilla-io/argilla" />
-
-</a>
+保留上游 [Apache-2.0 许可证](LICENSE)、作者归属和 [原始项目介绍](README.upstream.md)。

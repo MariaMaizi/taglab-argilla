@@ -1,31 +1,39 @@
-# A short local demonstration
+**简体中文** | [English](DEMO.en.md)
 
-This demonstration uses saved results to show the annotation and evaluation workflow. A fresh checkout contains no private corpus or run history, so first collect permitted data and create your own references/runs. Model calls require separately configured provider credentials; they are not needed to replay saved results.
+# 约 3 分钟的本地演示
 
-## 1. Show the input and its boundary — about 30 seconds
+这段演示使用已保存的结果，展示一条内容从标注到评测、复核和归档的过程。新下载的仓库没有私人数据与历史实验，需要先准备允许使用的样本。回放已有结果不需要再次调用模型。
 
-Open the companion workbench at its local address, then show a title, cleaned description, source and cleaning audit. Explain that this task labels text, not audio. Show the label definitions and the explicit unknown-format option.
+## 1. 展示输入与任务范围 · 约 30 秒
 
-## 2. Show one paired experiment — about 45 seconds
+打开 TagLab 工作台，展示一条标题与清洗后的简介，再展开来源和清洗记录。说明本项目根据这些文字判断主题与节目形式。展示标签定义，以及资料不足时可选的“无法判断”。
 
-Open a saved model A/B run. Both strategies saw the same input and generation contract; B added definitions and counterexamples. Separate mechanical output validity from agreement with the available references. State the number of reference records and their category coverage before showing any score.
+可配合讲解：
 
-In the recorded small pilot, 18 of 20 outputs passed structural/quotation checks. This is a validity result, not 90% classification accuracy. Do not rerun an API call simply to obtain a cleaner demonstration.
+> 这里先确认人和模型看到的是哪份资料。原文、清洗结果和判断依据都有记录，后面出现分歧时能回到同一个输入。
 
-## 3. Show why a real quotation can still be insufficient — about 45 seconds
+## 2. 展示同一输入上的 A/B 实验 · 约 45 秒
 
-Open a model-review dataset in Argilla. The candidate is visibly machine-generated, and the semantic-support question is separate from the label fields. Use a speaker-count example: narration or a description of production sources does not necessarily identify the number of people speaking.
+进入“策略对比”，打开一条已保存的模型实验。说明两组使用相同输入、模型参数和输出协议，B 额外加入标签定义与反例。先交代有效人工参考数量及覆盖范围，再展示分数。
 
-Show a submitted response by selecting the Submitted status filter. A disputed review can retain the user's interpretation while requesting review; it does not become an independent reference. Blind tasks and model-visible review tasks have different purposes.
+本轮 20 次输出中有 18 次通过格式与引用校验。这里可以直接展示两次失败及拒绝原因，说明“校验通过”衡量的是什么；不能把它当作 90% 分类准确率。
 
-## 4. Show reference revision without rewriting history — about 45 seconds
+## 3. 展示“引用存在，但不一定支持结论” · 约 45 秒
 
-Use the saved reference-audit report beside the original experiment. The local pilot kept the same model outputs, changed one reference label after explicit user confirmation, and computed a separate sensitivity analysis with zero new model requests. A score change caused by a reference revision is not a model improvement or a new blinded result.
+打开 Argilla 的机器复核任务，展示“机器候选（不是人工答案）”、Suggestion 来源和单独的语义支持问题。用讲话人数的例子说明：叙述或制作资料说明，未必足以判断节目是独白还是多人讨论。
 
-The reference audit checks input and taxonomy compatibility and retains hashes. Changed inputs or a changed label definition require another appropriate run rather than attaching old predictions to a new observation.
+查看已经提交的回答时，将状态筛选切换为 **Submitted**。展示一条保留用户解释、同时标记争议的反馈。它可以进入后续讨论，但不会自动算成独立人工参考。
 
-## 5. State the current limit — about 15 seconds
+## 4. 展示参考修订与评分追溯 · 约 45 秒
 
-The prototype demonstrates local collection, independent annotation, model suggestions, human feedback, validation, explicit adjudication and immutable run history. A small, source-skewed, single-annotator pilot does not establish general model quality. Broader references and independent agreement checks remain further work.
+将原实验与另存的参考修订分析并排打开。本轮保留相同模型输出，按用户明确确认修改一条参考，再以 0 次新模型调用计算分数变化。说明变化来自参考，不表示模型变强，也不是一次新的独立测试。
 
-Use synthetic or cleared inputs for public screenshots. Private labels, full publisher text, run dumps, credentials and deployment secrets remain outside the repository.
+可配合讲解：
+
+> 原实验没有被覆盖。这里能看见参考版本、输入与预测哈希，也能解释为什么分数变化。输入或标签规范发生变化时，工具会拒绝直接复用旧预测。
+
+## 5. 交代当前范围 · 约 15 秒
+
+当前已跑通过资料整理、独立标注、模型建议、人工反馈、校验、显式裁决与实验归档。试标数据来源和主题仍较集中，单人参考数量也有限，后续需要扩充样本并检查独立标注者之间的分歧。
+
+公开演示截图使用合成或已获许可的材料；私人标注、出版方全文、完整实验输出和密钥不放进仓库。
