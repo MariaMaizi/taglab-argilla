@@ -1,0 +1,7 @@
+private/
+__pycache__/
+.pytest_cache/
+.env
+.env.*
+*.db
+*.sqlite*

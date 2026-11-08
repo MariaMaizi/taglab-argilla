@@ -1,3 +1,13 @@
+# TagLab: Argilla 扩展版
+
+这个 Fork 用于播客文字标签的标注、模型评测与错误复核。应用代码和说明见 **[examples/taglab](examples/taglab/README.md)**，其中包含可运行的本地工作台、Argilla SDK 适配器、测试和部署配置。
+
+新增能力包括盲标与机器复核分离、连续原文依据校验、人工回答暂存与显式裁决、输入与规范版本检查。也修复了 SDK 干净安装缺少依赖和自定义 transport 参数重复的问题。上游许可证与原始介绍保留如下。
+
+目前已验证 SDK 和本地数据往返；完整 Argilla 网页服务仍需可用的 Docker Linux 环境，不能将离线测试理解为已经部署。
+
+---
+
 > [!IMPORTANT]
 The original authors have moved on to exciting new projects! The codebase is mature and stable, having served users reliably for years. While we won't be adding new features going forward, we're committed to solve bug fixes and publish patches as needed.
 If you're interested in helping maintain or extend this project, we'd love to hear from you! Please open an issue to discuss becoming a maintainer - we're looking for dedicated contributors who can take ownership of the project's future development.
@@ -165,4 +175,5 @@ To help our community with the creation of contributions, we have created our [c
 <img  src="https://contrib.rocks/image?repo=argilla-io/argilla" />
 
 </a>
+
 

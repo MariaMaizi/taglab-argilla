@@ -37,10 +37,14 @@ def create_http_client(api_url: str, api_key: str, timeout: int, retries: int, *
     headers = client_args.pop("headers", {})
     headers["X-Argilla-Api-Key"] = api_key
 
-    http_transport = httpx.HTTPTransport(
-        retries=retries,
-        **{name: client_args.pop(name) for name in TRANSPORT_ARGS if name in client_args},
-    )
+    # TagLab fork: accept an explicit transport for offline contract tests or
+    # custom routing. Otherwise `transport` is passed to Client twice.
+    http_transport = client_args.pop("transport", None)
+    if http_transport is None:
+        http_transport = httpx.HTTPTransport(
+            retries=retries,
+            **{name: client_args.pop(name) for name in TRANSPORT_ARGS if name in client_args},
+        )
 
     return httpx.Client(
         base_url=api_url,

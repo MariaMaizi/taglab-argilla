@@ -1,0 +1,61 @@
+services:
+  argilla:
+    image: argilla/argilla-server:v2.8.0
+    ports: ["127.0.0.1:6900:6900"]
+    environment: &environment
+      ARGILLA_HOME_PATH: /var/lib/argilla
+      ARGILLA_ELASTICSEARCH: http://elasticsearch:9200
+      ARGILLA_DATABASE_URL: postgresql+asyncpg://postgres:${POSTGRES_PASSWORD:?run prepare_runtime.py}@postgres:5432/argilla
+      ARGILLA_REDIS_URL: redis://redis:6379/0
+      USERNAME: ${ARGILLA_USERNAME:?run prepare_runtime.py}
+      PASSWORD: ${ARGILLA_PASSWORD:?run prepare_runtime.py}
+      API_KEY: ${ARGILLA_API_KEY:?run prepare_runtime.py}
+      WORKSPACE: default
+      HF_HUB_DISABLE_TELEMETRY: "1"
+    volumes: ["argilladata:/var/lib/argilla"]
+    depends_on:
+      postgres: {condition: service_healthy}
+      elasticsearch: {condition: service_healthy}
+      redis: {condition: service_healthy}
+  worker:
+    image: argilla/argilla-server:v2.8.0
+    environment: *environment
+    command: sh -c 'python -m argilla_server worker --num-workers 1'
+    volumes: ["argilladata:/var/lib/argilla"]
+    depends_on: [argilla]
+  postgres:
+    image: postgres:14
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?run prepare_runtime.py}
+      POSTGRES_DB: argilla
+    volumes: ["postgresdata:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d argilla"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.17.0
+    environment:
+      ES_JAVA_OPTS: -Xms512m -Xmx512m -XX:UseSVE=0
+      CLI_JAVA_OPTS: -XX:UseSVE=0
+      discovery.type: single-node
+      xpack.security.enabled: "false"
+    volumes: ["elasticdata:/usr/share/elasticsearch/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:9200/_cluster/health >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+  redis:
+    image: redis:7.4
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+volumes:
+  argilladata:
+  postgresdata:
+  elasticdata:

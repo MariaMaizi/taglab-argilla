@@ -10,6 +10,8 @@ dynamic = ["version"]
 
 dependencies = [
     "httpx>=0.26.0",
+    # Imported by settings/_field.py; needed in a clean SDK environment.
+    "requests>=2.32.0",
     "pydantic>=2.6.0, <3.0.0",
     "huggingface_hub>=0.22.0",
     "tqdm>=4.60.0",
