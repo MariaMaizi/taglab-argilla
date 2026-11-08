@@ -18,11 +18,19 @@ Offline authentication uses `httpx.MockTransport`, explicitly labelled in CLI ou
 
 The companion workbench's existing model API was tested separately with real Qwen requests. Those results do not prove Argilla-server integration. No raw corpus or private model output is included in this repository.
 
+## Live deployment checked on 2026-11-08
+
+Docker Desktop's WSL 2 Linux engine started after the required Windows restart. All five Compose services ran; PostgreSQL, Elasticsearch and Redis health checks passed, the Argilla web page returned HTTP 200, and the browser login succeeded. Eighteen previously unannotated pilot inputs were bulk-uploaded and visibly present in the annotation page. They contained neither existing references nor model suggestions, and excluded holdout records. The first pull returned zero submitted proposals, as expected before a new annotation. The existing five local references and six experiment records were preserved.
+
+The opt-in `live_smoke.py` uses the real server and a separate synthetic QA workspace. Four records verify valid submitted-response decoding, draft exclusion, exact-quote rejection and remote-input integrity rejection. The single valid proposal is staged twice without updating references, then explicitly adjudicated only in an isolated fixture database; a second adjudication is rejected. Its responses are authored by `taglab-qa-bot` and are explicitly automated fixtures. No real quality score or human-label count is inferred from them.
+
+The initial Elasticsearch start failed because an ARM-specific `-XX:UseSVE=0` option was unsupported by this image's x86-64 JVM. The option was removed, then service startup was verified. Initial Docker registry downloads also timed out until Docker was configured to use the machine's existing local HTTP proxy; no registry mirror or unverified image source was substituted.
+
+The fork SDK reports `2.8.0.dev0`; these dataset upload and synthetic submitted-response round trips passed against the official `v2.8.0` server image. This verifies the exercised paths, not all SDK/server combinations. Dependency deprecation warnings from upstream Pydantic configuration remain visible.
+
 ## What remains unverified
 
-A real `docker compose up`, first login, server-side dataset validation/indexing, bulk upload and real UI-submitted response pull. Docker and a Linux engine are missing on the current Windows machine. Deployment files were parsed and inspected; container execution cannot be reported as passed.
-
-The SDK source reports `2.8.0.dev0`, whereas the optional official server image is `v2.8.0`. Exact live compatibility must be checked at deployment. Dependency deprecation warnings from upstream Pydantic configuration remain visible and are not suppressed as a false clean bill of health.
+A new, independent human response submitted through the real browser UI, pulled into the local proposal queue and explicitly adjudicated. The browser task is ready, but that human step has not yet occurred. Broad multi-user operations, production deployment and larger model-quality evaluation are also outside this acceptance run.
 
 ## Reproduction
 
